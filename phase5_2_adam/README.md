@@ -27,3 +27,14 @@ python src/step_5_2_adam.py
 | Static params | Optimized params |
 | Gradient only | Gradient → Update |
 | Loss constant | Loss decreasing |
+
+
+## Using trace.py
+
+```python
+from trace import tensor_stats, print_stats, adam_stats
+
+# 报告 Adam 优化进度
+stats = adam_stats(step=100, loss=loss_val, lr=0.002)
+print(f"Step {stats['step']} | Loss: {stats['loss']:.6f}")
+```

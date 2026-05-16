@@ -1,4 +1,10 @@
 #!/bin/bash
-# Phase 10.2: Full Pipeline
+# phase10_2_full_pipeline
+#   ./run.sh        — 运行主程序
+#   ./run.sh test   — 运行 pytest
 cd "$(dirname "$0")"
-python src/step_10_2_full_pipeline.py
+if [ "$1" = "trace" ] || [ "$1" = "test" ]; then
+    python -m pytest tests/ -v
+else
+    python src/step_10_2_full_pipeline.py
+fi

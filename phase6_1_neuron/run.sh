@@ -1,4 +1,10 @@
 #!/bin/bash
-# Phase 6.1: Neuron Complete
+# phase6_1_neuron
+#   ./run.sh        — 运行主程序
+#   ./run.sh trace  — 一键 trace 诊断
 cd "$(dirname "$0")"
-python src/step_6_1_neuron.py
+if [ "$1" = "trace" ]; then
+    python src/trace.py
+else
+    python src/step_6_1_neuron.py
+fi

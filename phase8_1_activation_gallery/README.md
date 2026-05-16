@@ -25,3 +25,13 @@ python src/step_8_1_activation_gallery.py
 |-----------|-----------|
 | ReLU analysis | Multi-activation gallery |
 | Single | Comparative |
+
+
+## Using trace.py
+
+```python
+from trace import tensor_stats, print_stats, activation_gallery_stats
+
+# 对比多种激活函数的输出
+activation_gallery_stats({'ReLU': out_relu, 'LeakyReLU': out_leaky, 'GELU': out_gelu})
+```

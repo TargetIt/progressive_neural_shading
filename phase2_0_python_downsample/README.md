@@ -29,3 +29,13 @@ python src/step_2_0_downsample.py
 | GPU only | GPU 渲染 + CPU 降采样 |
 | 无数据搬运 | GPU↔CPU 往返传输 |
 | 1024×1024 窗口 | 1024×512 窗口 |
+
+## Using trace.py
+
+```python
+from trace import verify_downsample
+
+# 验证降采样后的分辨率是否正确
+ok, msg = verify_downsample(downsampled, original_shape=(2048, 2048))
+print(msg)  # => shape=(512,512) OK (steps=2, 2048/4=512)
+```

@@ -26,3 +26,14 @@ python src/step_3_1_ssaa.py
 | 2x 超采样 | 4×4 = 16x 子像素 |
 | 单 render | ssaa_render + render |
 | 概念演示 | 完整 SSAA 管线 |
+
+
+## Using trace.py
+
+```python
+from trace import tensor_stats, print_stats, compare_ssaa
+
+# 对比标准渲染和 SSAA 结果
+ok, msg, diff = compare_ssaa(std_1x, ssaa_result)
+print(msg)
+```

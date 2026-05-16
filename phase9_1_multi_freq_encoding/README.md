@@ -25,3 +25,14 @@ NeRF-style 多频率 sin/cos 编码。按 ESC 退出。
 |-----------|-----------|
 | Single freq, sin only | Multi-freq, sin+cos |
 | 2D→2D | 2D→4N D |
+
+
+## Using trace.py
+
+```python
+from trace import tensor_stats, print_stats, freq_encoding_stats
+
+# 报告多频率编码维度
+stats = freq_encoding_stats(n_freqs=10, input_dim=2, output_dim=40)
+print(f"{stats['input_dim']}D -> {stats['output_dim']}D")
+```

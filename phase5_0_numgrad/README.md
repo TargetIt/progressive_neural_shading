@@ -26,3 +26,14 @@ python src/step_5_0_numgrad.py
 | Loss only | Loss + Gradient |
 | 静态可视化 | 数值优化方向 |
 | 2 renders | 3 renders |
+
+
+## Using trace.py
+
+```python
+from trace import tensor_stats, print_stats, gradient_stats
+
+# 分析数值梯度统计
+stats = gradient_stats(grad_tensor, h=0.01)
+print(f"Mean |grad|: {stats['mean_abs_grad']:.6f}")
+```

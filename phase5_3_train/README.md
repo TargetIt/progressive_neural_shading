@@ -29,3 +29,14 @@ python src/step_5_3_train.py
 | Simple ref | SSAA ref |
 | Constant LR | Linear decay |
 | No baseline | Baseline comparison |
+
+
+## Using trace.py
+
+```python
+from trace import tensor_stats, print_stats, training_progress
+
+# 报告训练进度 (step, loss, baseline, lr, improvement)
+progress = training_progress(step, loss_val, baseline_val, lr)
+print(f"Step {progress['step']} | Improvement: {progress['improvement']:.6f}")
+```

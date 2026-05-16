@@ -27,3 +27,14 @@ python src/step_6_2_mlp_training.py
 | Hardcoded W, b | Learned W, b |
 | No gradient | Atomic grad accumulation |
 | Single forward | Forward + backward + Adam |
+
+
+## Using trace.py
+
+```python
+from trace import tensor_stats, print_stats, network_stats
+
+# 报告网络参数统计 (weights, biases)
+stats = network_stats(network)
+print(f"|W|_mean: {stats['|W|_mean']:.3f}, W_shape: {stats['W_shape']}")
+```

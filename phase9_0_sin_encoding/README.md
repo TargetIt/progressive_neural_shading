@@ -25,3 +25,14 @@ Sin 位置编码: UV → sin(freq * UV) → MLP。按 ESC 退出。
 |-----------|-----------|
 | Raw UV input | sin(freq * UV) |
 | Activation focus | Encoding focus |
+
+
+## Using trace.py
+
+```python
+from trace import tensor_stats, print_stats, encoding_stats
+
+# 分析 sin 编码输出: 范围、幅值
+stats = encoding_stats(encoded_output)
+print(f"Range: {stats['range']}, Mean abs: {stats['mean_abs']:.3f}")
+```

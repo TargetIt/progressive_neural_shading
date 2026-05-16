@@ -25,3 +25,14 @@ python src/step_10_1_trainable_latent.py
 |-----------|-----------|
 | Fixed latent | Trainable latent |
 | No latent grad | Latent gradient flow |
+
+
+## Using trace.py
+
+```python
+from trace import tensor_stats, print_stats, trainable_latent_stats
+
+# 报告可训练 latent 优化进度
+stats = trainable_latent_stats(latent, latent_grad)
+print(f"|latent|={stats['|latent|']:.3f}, |grad|={stats['|grad|']:.3f}")
+```

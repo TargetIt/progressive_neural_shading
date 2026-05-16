@@ -28,3 +28,14 @@ python src/step_2_2_mipmap.py
 | 1024×512 | 1024×1024 |
 | blit tonemap | blit clamp |
 | 中间状态 | 等价参考 step_02 |
+
+
+## Using trace.py
+
+```python
+from trace import tensor_stats, print_stats, verify_mipmap_chain
+
+# 验证 mipmap 链: 每级分辨率是上一级的 1/2
+ok, msg = verify_mipmap_chain([level0, level1, level2])
+print(msg)  # => 3 levels OK
+```

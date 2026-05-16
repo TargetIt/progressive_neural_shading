@@ -26,3 +26,15 @@ python src/step_7_0_two_layer.py
 | Single layer | Two layers |
 | 2→3 directly | 2→16→3 |
 | Training | Forward only |
+
+
+## Using trace.py
+
+```python
+from trace import tensor_stats, print_stats, layer_stats
+
+# 逐层打印网络参数
+layer_stats(network)
+# => Layer 0: W(16x2) |W|=0.123
+# => Layer 1: W(3x16) |W|=0.089
+```

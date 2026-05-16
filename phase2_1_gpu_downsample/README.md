@@ -29,3 +29,14 @@ python src/step_2_1_gpu_downsample.py
 | GPU↔CPU 数据传输 | 零数据传输 |
 | 慢 (PCIe 瓶颈) | 快 (GPU 并行) |
 | 依赖 step_1_2 shader | 自包含 shader |
+
+
+## Using trace.py
+
+```python
+from trace import tensor_stats, print_stats, verify_gpu_downsample
+
+# 验证 GPU 降采样: 分辨率正确 + 无 NaN
+ok, msg = verify_gpu_downsample(original, downsampled, steps=2)
+print(msg)  # => shape=(512,512) OK
+```

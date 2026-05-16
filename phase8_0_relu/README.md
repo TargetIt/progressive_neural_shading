@@ -25,3 +25,14 @@ ReLU 激活函数分析与可视化。按 ESC 退出。
 |-----------|-----------|
 | Training focus | Activation focus |
 | ReLU used | ReLU analyzed |
+
+
+## Using trace.py
+
+```python
+from trace import tensor_stats, print_stats, relu_analysis
+
+# 分析 ReLU 死神经元比例
+stats = relu_analysis(output)
+print(f"Dead: {stats['dead_pct']:.1f}%, Active mean: {stats['active_mean']:.3f}")
+```

@@ -26,3 +26,14 @@ python src/step_4_1_sqerror.py
 | abs_diff | sq_error |
 | 灰度 error map | RGB per-channel error |
 | No MSE | MSE in console |
+
+
+## Using trace.py
+
+```python
+from trace import tensor_stats, print_stats, compute_mse
+
+# 从平方误差 Tensor 计算 MSE
+mse = compute_mse(sq_tensor)
+print(f'MSE: {mse:.6f}')
+```

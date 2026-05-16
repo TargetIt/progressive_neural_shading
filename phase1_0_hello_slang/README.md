@@ -21,3 +21,21 @@ python src/step_1_0_hello.py
 - **app.slang**: 最简 blit helper
 - **step_1_0_hello.slang**: 返回纯红色的着色器
 - **trace.py**: Tensor 统计 (min/max/mean)
+
+## Using trace.py
+
+```python
+from trace import tensor_stats, print_stats, verify_solid_color
+
+# 获取 GPU Tensor 的统计信息
+stats = tensor_stats(output, name="output")
+# => {'name': 'output', 'shape': (512,512), 'min': 0.0, 'max': 1.0, 'mean': 0.33}
+
+# 直接打印统计
+print_stats(output, name="output")
+# => [output] shape=(512,512) min=0.000 max=1.000 mean=0.333
+
+# 验证所有像素是否为纯红色
+ok, msg = verify_solid_color(output, expected_rgb=(1.0, 0.0, 0.0))
+print(f"Solid color check: {msg}")  # => Solid color check: OK
+```

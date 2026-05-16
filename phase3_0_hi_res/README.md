@@ -26,3 +26,14 @@ python src/step_3_0_hi_res.py
 | 单次渲染 | 两次渲染 (1x + 2x) |
 | 全屏 blit | 左右并排 blit |
 | Mipmap 链 | 超采样预览 |
+
+
+## Using trace.py
+
+```python
+from trace import tensor_stats, print_stats, compare_1x_vs_2x
+
+# 对比 1x 和 2x 超采样结果
+ok, msg, diff = compare_1x_vs_2x(out_1x, out_2x_down)
+print(f'1x vs 2x diff: {diff:.4f}')
+```

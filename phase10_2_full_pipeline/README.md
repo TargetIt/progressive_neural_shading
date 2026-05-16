@@ -25,3 +25,14 @@ python src/step_10_2_full_pipeline.py
 |-----------|-----------|
 | Latent → RGB | Latent → Material → BRDF → RGB |
 | Direct color | PBR pipeline |
+
+
+## Using trace.py
+
+```python
+from trace import tensor_stats, print_stats, pipeline_stats
+
+# 报告完整管线进度 (loss, step, lr, latent)
+stats = pipeline_stats(loss, step, lr, latent, network)
+print(f"Step {stats['step']} | Loss: {stats['loss']:.6f}")
+```

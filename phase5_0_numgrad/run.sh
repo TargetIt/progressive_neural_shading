@@ -1,4 +1,10 @@
 #!/bin/bash
-# Phase 5.0: Numerical Gradient
+# phase5_0_numgrad
+#   ./run.sh        — 运行主程序
+#   ./run.sh trace  — 一键 trace 诊断
 cd "$(dirname "$0")"
-python src/step_5_0_numgrad.py
+if [ "$1" = "trace" ]; then
+    python src/trace.py
+else
+    python src/step_5_0_numgrad.py
+fi

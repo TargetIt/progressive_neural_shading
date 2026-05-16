@@ -25,3 +25,14 @@ python src/step_10_0_fixed_latent.py
 |-----------|-----------|
 | sin/cos encoding | Latent texture |
 | Exploding dims | Compact dims |
+
+
+## Using trace.py
+
+```python
+from trace import tensor_stats, print_stats, latent_stats
+
+# 分析 latent texture: 分辨率和通道统计
+stats = latent_stats(latent_tensor)
+print(f"Latent: {stats['shape']}, channels={stats['channels']}")
+```

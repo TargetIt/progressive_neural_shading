@@ -1,4 +1,10 @@
 #!/bin/bash
-# Phase 3.1: SSAA Pipeline
+# phase3_1_ssaa
+#   ./run.sh        — 运行主程序
+#   ./run.sh trace  — 一键 trace 诊断
 cd "$(dirname "$0")"
-python src/step_3_1_ssaa.py
+if [ "$1" = "trace" ]; then
+    python src/trace.py
+else
+    python src/step_3_1_ssaa.py
+fi

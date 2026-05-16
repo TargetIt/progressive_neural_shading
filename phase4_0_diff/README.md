@@ -26,3 +26,15 @@ python src/step_4_0_diff.py
 | 1x vs SSAA | Reference vs Prediction |
 | SSAA 抗锯齿 | Loss 计算 |
 | 2 panels | 3 panels |
+
+
+## Using trace.py
+
+```python
+from trace import tensor_stats, print_stats, error_stats
+
+# 分析逐像素误差统计
+stats = error_stats(diff_tensor)
+print(f"Mean error: {stats['mean_error']:.4f}")
+print(f"Pixels >0.01: {stats['pct_above_001']:.1f}%")
+```

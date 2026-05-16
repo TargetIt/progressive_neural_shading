@@ -27,3 +27,14 @@ python src/step_4_2_loss_viz.py
 | 不同光源对比 | Low-res vs High-res |
 | 单级渲染 | Full down/up pipeline |
 | MSE in console | Loss heatmap |
+
+
+## Using trace.py
+
+```python
+from trace import tensor_stats, print_stats, loss_stats
+
+# 分析 loss heatmap 统计
+stats = loss_stats(loss_tensor)
+print(f"Mean loss: {stats['mean_loss']:.4f}")
+```

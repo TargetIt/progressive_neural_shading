@@ -31,3 +31,19 @@ python src/step_1_1_albedo_brdf.py
 | 无光照计算 | Lambertian + Blinn-Phong |
 | 无输入参数 | light_dir + view_dir |
 | 24 行 .slang | 62 行 .slang |
+
+## Using trace.py
+
+```python
+from trace import tensor_stats, print_stats, verify_lighting_variation
+
+# 验证 BRDF 光照是否产生了像素间变化
+ok, msg = verify_lighting_variation(output)
+print(f"Lighting check: {msg}")
+# => Lighting check: std=0.1234 (有光照变化)
+
+# 如果输出全屏单色，说明光照计算有误
+ok, msg = verify_lighting_variation(flat_output, min_std=0.001)
+print(f"Check: {msg}")
+# => Check: std=0.0000 (无光照变化, 可能全屏单色)
+```

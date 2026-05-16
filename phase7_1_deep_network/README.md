@@ -25,3 +25,14 @@ python src/step_7_1_deep_network.py
 |-----------|-----------|
 | 2 layers (2→16→3) | 3 layers (2→32→32→3) |
 | Forward only | Full training |
+
+
+## Using trace.py
+
+```python
+from trace import tensor_stats, print_stats, deep_network_stats
+
+# 报告深层网络 (3层) 参数
+deep_network_stats(network)
+# => L0(2->32): |W|=0.234  L1(32->32): |W|=0.156
+```

@@ -36,3 +36,16 @@ _build/mlp-training-coopvec
 | Software matmul | CoopVec HW matmul |
 | Any Vulkan GPU | NVIDIA only |
 | SW speed | 2-5x faster |
+
+## Using trace.py
+
+```python
+from trace import verify_project
+
+# 验证 CoopVec 项目结构是否完整
+ok, missing = verify_project('.')
+if ok:
+    print('Project structure OK')
+else:
+    print(f'Missing files: {missing}')
+```

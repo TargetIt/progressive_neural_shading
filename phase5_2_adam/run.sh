@@ -1,4 +1,10 @@
 #!/bin/bash
-# Phase 5.2: Adam Optimizer
+# phase5_2_adam
+#   ./run.sh        — 运行主程序
+#   ./run.sh trace  — 一键 trace 诊断
 cd "$(dirname "$0")"
-python src/step_5_2_adam.py
+if [ "$1" = "trace" ]; then
+    python src/trace.py
+else
+    python src/step_5_2_adam.py
+fi

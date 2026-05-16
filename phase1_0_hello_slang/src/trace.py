@@ -49,3 +49,24 @@ def verify_solid_color(tensor: spy.Tensor, expected_rgb=(1.0, 0.0, 0.0)):
     if abs(np.mean(arr[..., 2]) - b) > tol:
         return False, f"B channel: expected {b}, got {np.mean(arr[..., 2]):.3f}"
     return True, "OK"
+
+
+if __name__ == "__main__":
+    """一键 trace: python src/trace.py"""
+    import slangpy as spy
+    from pathlib import Path
+
+    src_dir = Path(__file__).parent
+    device = spy.create_device(
+        spy.DeviceType.automatic,
+        enable_debug_layers=True,
+        include_paths=[src_dir],
+    )
+    module = spy.Module.load_from_file(device, "step_1_0_hello.slang")
+    output = spy.Tensor.empty(device, shape=(64, 64), dtype=spy.float3)
+    module.render(pixel=spy.call_id(), _result=output)
+
+    print_stats(output, "output")
+    ok, msg = verify_solid_color(output)
+    print(f"verify_solid_color: {msg}")
+    print("Trace complete.")

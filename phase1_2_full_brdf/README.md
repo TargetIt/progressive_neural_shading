@@ -35,3 +35,18 @@ python src/step_1_2_full_brdf.py
 | Lambertian + Blinn-Phong | Full Disney BRDF |
 | 512×512 | 1024×1024 |
 | 无色调映射 | ACES tonemap |
+
+## Using trace.py
+
+```python
+from trace import tensor_stats, print_stats, verify_texture_output
+
+# 验证纹理 BRDF 输出是否正常
+ok, msg = verify_texture_output(output)
+print(f"Texture output check: {msg}")
+# => Texture output check: mean=0.2456, std=0.0891
+
+# 如果纹理未加载或渲染失败
+ok, msg = verify_texture_output(dark_output)
+# => False, "mean=0.0001 (输出太暗或被截断)"
+```

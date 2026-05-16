@@ -1,7 +1,13 @@
 #!/bin/bash
-# Phase 11.1: CoopVec Hardware Acceleration
+# phase11_1_coopvec
+#   ./build.sh        — CMake configure + build
+#   ./build.sh trace  — pytest (project structure verification)
 set -e
 cd "$(dirname "$0")"
-cmake -S src -B _build -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build _build
-echo "Build successful. Run: _build/mlp-training-coopvec"
+if [ "$1" = "trace" ] || [ "$1" = "test" ]; then
+    python -m pytest tests/ -v
+else
+    cmake -S src -B _build -G Ninja -DCMAKE_BUILD_TYPE=Release
+    cmake --build _build
+    echo "Build successful."
+fi

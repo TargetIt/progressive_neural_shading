@@ -1,4 +1,10 @@
 #!/bin/bash
-# Phase 2.0: Python Downsample
+# phase2_0_python_downsample
+#   ./run.sh        — 运行主程序
+#   ./run.sh trace  — 一键 trace 诊断
 cd "$(dirname "$0")"
-python src/step_2_0_downsample.py
+if [ "$1" = "trace" ]; then
+    python src/trace.py
+else
+    python src/step_2_0_downsample.py
+fi

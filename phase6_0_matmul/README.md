@@ -22,3 +22,14 @@ python src/step_6_0_matmul.py
 ## Context
 
 这是 neural network step_01 的第一步。Next: Phase 6.1 → Neuron (matmul + bias + activation)
+
+
+## Using trace.py
+
+```python
+from trace import tensor_stats, print_stats, verify_matmul_output
+
+# 验证矩阵乘法输出: 检查 RGB 通道范围
+ranges = verify_matmul_output(output, weights)
+print(f"R: {ranges['R_range']}, G: {ranges['G_range']}")
+```

@@ -1,4 +1,10 @@
 #!/bin/bash
-# Phase 5.3: Full Training Loop
+# phase5_3_train
+#   ./run.sh        — 运行主程序
+#   ./run.sh test   — 运行 pytest
 cd "$(dirname "$0")"
-python src/step_5_3_train.py
+if [ "$1" = "trace" ] || [ "$1" = "test" ]; then
+    python -m pytest tests/ -v
+else
+    python src/step_5_3_train.py
+fi

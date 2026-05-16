@@ -42,3 +42,30 @@ def verify_gpu_downsample(original, downsampled, steps=2):
     if np.any(np.isnan(arr)):
         return False, "NaN in downsampled output"
     return True, f"shape=({ds_h},{ds_w}) OK"
+
+if __name__ == "__main__":
+    """一键 trace: python src/trace.py"""
+    import slangpy as spy
+    from pathlib import Path
+
+
+    src_dir = Path(__file__).parent
+    device = spy.create_device(
+        spy.DeviceType.automatic,
+        enable_debug_layers=True,
+        include_paths=[src_dir],
+    )
+    module = spy.Module.load_from_file(device, "step_2_1_gpu_downsample.slang")
+    assets = src_dir.parent / "assets"
+    albedo = spy.Tensor.load_from_image(device, assets / "PavingStones070_2K.diffuse.jpg", linearize=True)
+    normal = spy.Tensor.load_from_image(device, assets / "PavingStones070_2K.normal.jpg", scale=2, offset=-1)
+    roughness = spy.Tensor.load_from_image(device, assets / "PavingStones070_2K.roughness.jpg", grayscale=True)
+    light_dir = spy.math.normalize(spy.float3(0.2, 0.2, 1.0))
+    view_dir = spy.float3(0, 0, 1)
+    output = spy.Tensor.empty_like(albedo)
+    module.render(pixel=spy.call_id(), material={"albedo": albedo, "normal": normal, "roughness": roughness}, light_dir=light_dir, view_dir=view_dir, _result=output)
+    ds = spy.Tensor.empty(device, shape=(output.shape[0]//2, output.shape[1]//2), dtype=output.dtype)
+    module.downsample3(spy.call_id(), output, _result=ds)
+    ok, msg = verify_gpu_downsample(output, ds, steps=1)
+    print(f"verify_gpu_downsample: {msg}")
+    print("Trace complete.")

@@ -27,3 +27,14 @@ python src/step_5_1_ad.py
 | Numerical (finite diff) | Automatic (bwd_diff) |
 | 3 renders per step | 1 forward + 1 backward |
 | Gradient on roughness only | All 3 parameters |
+
+
+## Using trace.py
+
+```python
+from trace import tensor_stats, print_stats, ad_gradient_stats
+
+# 分析 AD 计算的梯度 (albedo/normal/roughness)
+stats = ad_gradient_stats(albedo_grad, normal_grad, roughness_grad)
+print(f"|grad_albedo|: {stats['|grad_albedo|']:.6f}")
+```

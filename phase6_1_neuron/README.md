@@ -26,3 +26,14 @@ python src/step_6_1_neuron.py
 | W * uv | W * uv + b |
 | Linear | ReLU(W*uv + b) |
 | No dead zones | Dark (dead) regions |
+
+
+## Using trace.py
+
+```python
+from trace import tensor_stats, print_stats, relu_stats
+
+# 分析 ReLU 输出: 负值/零值统计
+stats = relu_stats(output)
+print(f"Negatives: {stats['negatives']}, Zeros: {stats['zeros']}/{stats['total']}")
+```
