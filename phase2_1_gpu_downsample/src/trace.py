@@ -1,18 +1,13 @@
-# Phase 1.0: Trace / Debug Utilities
+# Phase 2.1: Trace / Debug Utilities
 # ====================================
-# 提供 shader 输出的基本统计: min, max, mean
-# 帮助理解"shader 到底输出了什么"
+# 提供 shader 输出的基本统计和 GPU 降采样验证。
 
 import numpy as np
 import slangpy as spy
 
 
 def tensor_stats(tensor: spy.Tensor, name: str = "tensor") -> dict:
-    """返回 GPU Tensor 的统计信息。
-
-    Returns:
-        dict with min, max, mean, shape, dtype
-    """
+    """返回 GPU Tensor 的统计信息。"""
     arr = tensor.to_numpy()
     return {
         "name": name,
@@ -32,20 +27,18 @@ def print_stats(tensor: spy.Tensor, name: str = "tensor"):
           f"mean={stats['mean']:.3f}")
 
 
-def verify_solid_color(tensor: spy.Tensor, expected_rgb=(1.0, 0.0, 0.0)):
-    """验证所有像素是否为预期颜色。
+def verify_gpu_downsample(original, downsampled, steps=2):
+    """验证 GPU 降采样: 分辨率正确减半, 无 NaN。
 
     Returns:
-        (bool, str): 是否通过, 错误信息
+        (bool, str)
     """
-    arr = tensor.to_numpy()
-    r, g, b = expected_rgb
-    tol = 0.01
-
-    if abs(np.mean(arr[..., 0]) - r) > tol:
-        return False, f"R channel: expected {r}, got {np.mean(arr[..., 0]):.3f}"
-    if abs(np.mean(arr[..., 1]) - g) > tol:
-        return False, f"G channel: expected {g}, got {np.mean(arr[..., 1]):.3f}"
-    if abs(np.mean(arr[..., 2]) - b) > tol:
-        return False, f"B channel: expected {b}, got {np.mean(arr[..., 2]):.3f}"
-    return True, "OK"
+    orig_h, orig_w = original.shape[:2]
+    expected_h, expected_w = orig_h // (2 ** steps), orig_w // (2 ** steps)
+    ds_h, ds_w = downsampled.shape[:2]
+    if ds_h != expected_h or ds_w != expected_w:
+        return False, f"expected ({expected_h},{expected_w}), got ({ds_h},{ds_w})"
+    arr = downsampled.to_numpy()
+    if np.any(np.isnan(arr)):
+        return False, "NaN in downsampled output"
+    return True, f"shape=({ds_h},{ds_w}) OK"

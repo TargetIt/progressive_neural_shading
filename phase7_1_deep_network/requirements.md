@@ -1,22 +1,20 @@
-# Phase 1.0 Requirements
+# Phase 7.1 Requirements
 
 ## New Features (2026-05-16)
 
-- **Minimal App Framework** (`app.py`): window + GPU device + blit, ~100 lines
-- **Minimal Blit Shader** (`app.slang`): Tensor → screen output texture
-- **Hello Slang Shader** (`step_1_0_hello.slang`): returns solid red `float3(1,0,0)`
-- **Entry Point** (`step_1_0_hello.py`): loads shader, render loop, ESC to exit
+- **3 层深度网络**: 2→32→32→3 with ReLU
+- **完整训练**: Adam + atomic gradients + LCG
+- **功能对齐**: 等价于 `network/step_02_multiple_layers`
 
 ## Functional Requirements
 
-1. User can run `python src/step_1_0_hello.py` and see a red window
-2. Window size is 512×512
-3. ESC key closes the window
-4. All pixels should be (1.0, 0.0, 0.0)
+1. Run `python src/step_7_1_deep_network.py` to see deep network training
+2. 3-panel: Reference | Prediction | Loss
+3. Loss decreases; prediction approaches reference
 
 ## Acceptance Criteria
 
-- [x] Window opens without errors
-- [x] All pixels are solid red
-- [x] ESC closes the window
-- [x] shader compiles successfully (first run may take 2-5 seconds)
+- [x] 3-layer network trains successfully
+- [x] Loss decreases over time
+- [x] ESC closes window
+- [x] Functional equivalence with network step_02

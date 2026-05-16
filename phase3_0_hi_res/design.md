@@ -1,117 +1,67 @@
-# Phase 1.0: Hello Slang — Design Document
+# Phase 3.0: Higher Resolution Render — Design Document
 
-> **对应**: SIGGRAPH 2025 Neural Shading Course — step_01 前半部分
-> **前置 Phase**: 无 (第一个 Phase)
+> **对应**: SIGGRAPH 2025 Neural Shading Course — step_03_supersample (前半部分)
+> **前置 Phase**: Phase 2.2
 
 ## 1. Introduction / 架构概览
 
-Phase 1.0 是最小的可运行着色器：每个像素返回纯红色。
-目标是理解 Slang 着色语言的基本结构和 slangpy 的 GPU 调用模型。
+Phase 3.0 演示高分辨率渲染 + 降采样的效果。在同一帧中渲染 1x 和 2x 分辨率，并排对比。
 
 ```
 ┌──────────────────────────────────────────────────┐
-│                   step_1_0_hello.py               │
-│  ┌──────────┐   ┌────────────┐   ┌───────────┐  │
-│  │ App 框架 │ → │ Slang 编译 │ → │ GPU 执行  │  │
-│  │ app.py   │   │ .slang→GPU │   │ 每像素并行 │  │
-│  └──────────┘   └────────────┘   └───────────┘  │
-│       │               │                │         │
-│       v               v                v         │
-│  窗口+设备       step.slang      512×512 红色    │
-│  spy.Window      spy.Module       app.blit()     │
+│                step_3_0_hi_res.py                  │
+│  ┌──────────┐   ┌──────────┐   ┌───────────┐   │
+│  │ 1x 渲染  │   │ 2x 渲染  │   │ 并排显示  │   │
+│  │ render() │   │ render() │   │ blit ×2  │   │
+│  └──────────┘   └──────────┘   └───────────┘   │
+│       │              │               │          │
+│       v              v               v          │
+│  H×W BRDF    2H×2W→H×W        左: 1x 原始      │
+│               downsample       右: 2x→down      │
 └──────────────────────────────────────────────────┘
 ```
 
 ## 2. Motivation / 设计动机
 
-学习任何 GPU 着色语言的第一步是理解:
-- **Shader 是什么**: 在 GPU 上对每个像素并行执行的函数
-- **Host 端如何调用**: Python → slangpy → GPU driver → 编译 → 执行
-- **数据流**: Tensor 分配 → shader 写入 → blit 到屏幕
-
-如果直接在 step_01 中引入 BRDF + 纹理 + 法线贴图, 初学者会迷失在细节中。
-Phase 1.0 剥离所有渲染知识, 只保留 GPU 编程的基本骨架。
+- **理解超采样**: 高分辨率渲染 + 降采样 = 最简单的抗锯齿
+- **并排对比**: 直观看到 1x 和 2x 渲染后降采样的画质差异
+- **中间步骤**: 为 Phase 3.1 的完整 SSAA 做铺垫
 
 ## 3. Algorithm and Theory / 核心算法
 
-### GPU 并行执行模型
+### 超采样原理
 
 ```
-CPU (Python):                     GPU (Slang):
-  module.render(                   ┌─────────────────────┐
-    pixel=spy.call_id(),           │ 对每个像素 (x,y):    │
-    _result=output                 │   render(x,y)        │
-  )                                │   并行执行 512×512 次 │
-                                   └─────────────────────┘
+2x 渲染: 每个源像素对应 2×2 个输出像素
+降采样: 4 个像素 box filter 平均 → 1 个像素
+效果: 减少 aliasing (锯齿)
 ```
 
-### 关键概念
-
-1. **spy.call_id()**: 告诉 slangpy 自动为 `pixel` 参数分配坐标
-2. **Tensor**: GPU 上的多维数组, `spy.Tensor.empty()` 在 GPU 显存中分配
-3. **blit**: 把 GPU Tensor 拷贝到屏幕输出纹理
-
-## 4. Architecture / 架构
-
-### 4.1 Module Breakdown
-
-| 文件 | 职责 | 行数 |
-|------|------|------|
-| `app.py` | 窗口创建, GPU 设备, blit 到屏幕 | ~100 |
-| `app.slang` | 最简 blit helper (Tensor→屏幕) | ~15 |
-| `step_1_0_hello.slang` | 着色器: 返回纯红色 | ~20 |
-| `step_1_0_hello.py` | 入口: 加载 shader, 渲染循环 | ~25 |
-
-### 4.2 Key APIs
+### 并排显示
 
 ```python
-# 创建 GPU 设备
-device = spy.create_device(DeviceType.automatic, include_paths=[...])
-
-# 编译 Shader
-module = spy.Module.load_from_file(device, "shader.slang")
-
-# 分配 GPU Tensor
-tensor = spy.Tensor.empty(device, shape=(H, W), dtype=spy.float3)
-
-# 逐像素执行 shader
-module.render(pixel=spy.call_id(), _result=tensor)
-
-# 显示到屏幕
-app.blit(tensor)
+app.blit(output_1x, size=(512, 1024), offset=(0, 0))    # 左半
+app.blit(output_2x_down, size=(512, 1024), offset=(512, 0))  # 右半
 ```
 
-## 5. Processing Flow / 执行流程
+## 4. Architecture
 
-```
-1. App.__init__()
-   ├── spy.Window(512, 512)        ← 创建窗口
-   ├── spy.create_device()         ← 创建 GPU 设备
-   └── spy.Module.load(app.slang)  ← 加载 blit helper
+| 文件 | 职责 |
+|------|------|
+| `step_3_0_hi_res.slang` | render() + downsample3/1 + MaterialParameters |
+| `step_3_0_hi_res.py` | 1x/2x rendering + side-by-side blit |
+| `trace.py` | Tensor 统计 + 1x vs 2x 对比 |
 
-2. step_1_0_hello.py
-   ├── spy.Module.load(step.slang) ← 编译 shader (首次慢, ~2-5秒)
-   └── spy.Tensor.empty(512,512)   ← 分配输出
+## 5. Comparison
 
-3. while app.process_events():     ← 每帧循环
-   ├── module.render(pixel=...)    ← GPU 执行: 512×512 次 render()
-   ├── app.blit(output)            ← Tensor → 屏幕纹理
-   └── app.present()               ← 提交帧
-```
+| Aspect | Phase 2.2 | Phase 3.0 |
+|--------|-----------|-----------|
+| 渲染次数 | 1 | 2 (1x + 2x) |
+| 输出 | 单画面 | 左右并排对比 |
+| 超采样 | 无 | 2x 渲染 + 降采样 |
+| 画质 | baseline | 可见抗锯齿效果 |
 
-## 6. Comparison / 对比
+## 6. Known Issues
 
-| Aspect | 参考 step_01 | Phase 1.0 |
-|--------|-------------|-----------|
-| 着色器输出 | BRDF 光照结果 | 纯红色 |
-| 纹理 | albedo + normal + roughness | 无 |
-| MaterialParameters struct | ✅ | ❌ |
-| BRDF 函数 | eval_brdf() | ❌ |
-| 代码行数 (.slang) | 43 | 20 |
-| 概念数 | 5+ | 2 |
-
-## 7. Known Issues / 遗留问题
-
-- 没有交互性 — 颜色是硬编码的, 不随输入变化
-- 没有纹理 — 无法展示材质
-- 下一 Phase (1.1) 将引入 BRDF 光照模型
+- 手动指定 offset/size 不够灵活 → Phase 3.1 用 SSAA 自动管理
+- 只有 stateless 的 2x 超采样，非用户可选

@@ -1,4 +1,4 @@
 #!/bin/bash
-# Phase 1.0: Hello Slang
+# Phase 10.1: Trainable Latent Texture
 cd "$(dirname "$0")"
-python src/step_1_0_hello.py
+python src/step_10_1_trainable_latent.py

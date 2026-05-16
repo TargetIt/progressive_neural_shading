@@ -1,23 +1,28 @@
-# Phase 1.0: Hello Slang — Minimal Shader
+# Phase 4.0: Per-Pixel Diff
 
 ## Quick Start
 
 ```bash
-pip install slangpy
-python src/step_1_0_hello.py
+python src/step_4_0_diff.py
 ```
 
-应该看到 512×512 的纯红色窗口。按 ESC 退出。
+三面板: 左=Reference, 中=Prediction, 右=Error Map (灰度)。按 ESC 退出。
 
 ## What This Phase Teaches
 
-- Slang `.slang` 文件的基本结构 (`import slangpy;`, 函数定义)
-- `slangpy` 的 GPU 调用模型 (`spy.call_id()`, `Tensor`, `blit`)
-- GPU 并行执行: `render(pixel)` 对每个像素执行一次, 512×512 = 262,144 次并行
+- Loss 的基础: 如何量化两个渲染结果的差异
+- Per-pixel absolute difference: |pred - ref|
+- Error visualization: 将误差编码为灰度图像
 
-## New in Phase 1.0
+## New in Phase 4.0
 
-- **app.py**: 最简渲染框架 (窗口 + GPU 设备 + blit)
-- **app.slang**: 最简 blit helper
-- **step_1_0_hello.slang**: 返回纯红色的着色器
-- **trace.py**: Tensor 统计 (min/max/mean)
+- **abs_diff()**: 逐像素绝对差计算
+- **3-panel 显示**: 1536×512 窗口
+
+## Diff from Phase 3.1
+
+| Phase 3.1 | Phase 4.0 |
+|-----------|-----------|
+| 1x vs SSAA | Reference vs Prediction |
+| SSAA 抗锯齿 | Loss 计算 |
+| 2 panels | 3 panels |

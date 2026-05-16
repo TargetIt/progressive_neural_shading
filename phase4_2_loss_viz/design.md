@@ -1,117 +1,60 @@
-# Phase 1.0: Hello Slang — Design Document
+# Phase 4.2: Loss Visualization — Design Document
 
-> **对应**: SIGGRAPH 2025 Neural Shading Course — step_01 前半部分
-> **前置 Phase**: 无 (第一个 Phase)
+> **对应**: SIGGRAPH 2025 Neural Shading Course — step_04_loss (完整版)
+> **前置 Phase**: Phase 4.1
 
-## 1. Introduction / 架构概览
+## 1. Introduction
 
-Phase 1.0 是最小的可运行着色器：每个像素返回纯红色。
-目标是理解 Slang 着色语言的基本结构和 slangpy 的 GPU 调用模型。
-
-```
-┌──────────────────────────────────────────────────┐
-│                   step_1_0_hello.py               │
-│  ┌──────────┐   ┌────────────┐   ┌───────────┐  │
-│  │ App 框架 │ → │ Slang 编译 │ → │ GPU 执行  │  │
-│  │ app.py   │   │ .slang→GPU │   │ 每像素并行 │  │
-│  └──────────┘   └────────────┘   └───────────┘  │
-│       │               │                │         │
-│       v               v                v         │
-│  窗口+设备       step.slang      512×512 红色    │
-│  spy.Window      spy.Module       app.blit()     │
-└──────────────────────────────────────────────────┘
-```
-
-## 2. Motivation / 设计动机
-
-学习任何 GPU 着色语言的第一步是理解:
-- **Shader 是什么**: 在 GPU 上对每个像素并行执行的函数
-- **Host 端如何调用**: Python → slangpy → GPU driver → 编译 → 执行
-- **数据流**: Tensor 分配 → shader 写入 → blit 到屏幕
-
-如果直接在 step_01 中引入 BRDF + 纹理 + 法线贴图, 初学者会迷失在细节中。
-Phase 1.0 剥离所有渲染知识, 只保留 GPU 编程的基本骨架。
-
-## 3. Algorithm and Theory / 核心算法
-
-### GPU 并行执行模型
+Phase 4.2 是 Step 4 最终形态，体现完整的 Loss Visualization 管线。
+核心思想: 将纹理降采样 → 低分辨率渲染 → 与高分辨率 reference 对比 → 可视化 loss。
 
 ```
-CPU (Python):                     GPU (Slang):
-  module.render(                   ┌─────────────────────┐
-    pixel=spy.call_id(),           │ 对每个像素 (x,y):    │
-    _result=output                 │   render(x,y)        │
-  )                                │   并行执行 512×512 次 │
-                                   └─────────────────────┘
+Full-res textures ──→ full-res render ──→ downsample → reference
+Low-res textures ──→ render ──────────→ prediction
+                            ↓
+              loss(reference, prediction) → heatmap
 ```
 
-### 关键概念
+这模拟了"神经网络应该从低分辨率输入预测高分辨率输出"的场景。
 
-1. **spy.call_id()**: 告诉 slangpy 自动为 `pixel` 参数分配坐标
-2. **Tensor**: GPU 上的多维数组, `spy.Tensor.empty()` 在 GPU 显存中分配
-3. **blit**: 把 GPU Tensor 拷贝到屏幕输出纹理
+## 2. Core Algorithm
 
-## 4. Architecture / 架构
-
-### 4.1 Module Breakdown
-
-| 文件 | 职责 | 行数 |
-|------|------|------|
-| `app.py` | 窗口创建, GPU 设备, blit 到屏幕 | ~100 |
-| `app.slang` | 最简 blit helper (Tensor→屏幕) | ~15 |
-| `step_1_0_hello.slang` | 着色器: 返回纯红色 | ~20 |
-| `step_1_0_hello.py` | 入口: 加载 shader, 渲染循环 | ~25 |
-
-### 4.2 Key APIs
-
-```python
-# 创建 GPU 设备
-device = spy.create_device(DeviceType.automatic, include_paths=[...])
-
-# 编译 Shader
-module = spy.Module.load_from_file(device, "shader.slang")
-
-# 分配 GPU Tensor
-tensor = spy.Tensor.empty(device, shape=(H, W), dtype=spy.float3)
-
-# 逐像素执行 shader
-module.render(pixel=spy.call_id(), _result=tensor)
-
-# 显示到屏幕
-app.blit(tensor)
+```slang
+float3 loss(int2 pixel, float3 reference, MaterialParameters mat, float3 L, float3 V) {
+    float3 color = render(pixel, mat, L, V);
+    float3 error = color - reference;
+    return error * error;  // squared error per channel
+}
 ```
 
-## 5. Processing Flow / 执行流程
+## 3. Pipeline
 
 ```
-1. App.__init__()
-   ├── spy.Window(512, 512)        ← 创建窗口
-   ├── spy.create_device()         ← 创建 GPU 设备
-   └── spy.Module.load(app.slang)  ← 加载 blit helper
-
-2. step_1_0_hello.py
-   ├── spy.Module.load(step.slang) ← 编译 shader (首次慢, ~2-5秒)
-   └── spy.Tensor.empty(512,512)   ← 分配输出
-
-3. while app.process_events():     ← 每帧循环
-   ├── module.render(pixel=...)    ← GPU 执行: 512×512 次 render()
-   ├── app.blit(output)            ← Tensor → 屏幕纹理
-   └── app.present()               ← 提交帧
+1. Full-res textures → render → output (H×W)
+2. output → downsample 2 steps → reference (H/4 × W/4)
+3. textures → downsample 2 steps → low-res textures (H/4 × W/4)
+4. low-res textures → render → prediction (H/4 × W/4)
+5. loss(reference, prediction) → heatmap
 ```
 
-## 6. Comparison / 对比
+## 4. Architecture
 
-| Aspect | 参考 step_01 | Phase 1.0 |
-|--------|-------------|-----------|
-| 着色器输出 | BRDF 光照结果 | 纯红色 |
-| 纹理 | albedo + normal + roughness | 无 |
-| MaterialParameters struct | ✅ | ❌ |
-| BRDF 函数 | eval_brdf() | ❌ |
-| 代码行数 (.slang) | 43 | 20 |
-| 概念数 | 5+ | 2 |
+| 文件 | 职责 |
+|------|------|
+| `step_4_2_loss_viz.slang` | MaterialParameters + render() + loss() + downsample3/1 |
+| `step_4_2_loss_viz.py` | Full pipeline + 3-panel display |
+| `trace.py` | loss_stats() |
 
-## 7. Known Issues / 遗留问题
+## 5. Comparison
 
-- 没有交互性 — 颜色是硬编码的, 不随输入变化
-- 没有纹理 — 无法展示材质
-- 下一 Phase (1.1) 将引入 BRDF 光照模型
+| Aspect | Phase 4.1 | Phase 4.2 |
+|--------|-----------|-----------|
+| Reference | Different light angle | Full-res → downsample |
+| Prediction | Same res, different light | Low-res textures → render |
+| Pipeline | Simple sq_error | Full loss viz pipeline |
+| 参考对齐 | 中间状态 | 等价 step_04_loss |
+
+## 6. Known Issues
+
+- Loss 仅用于可视化，尚未用于优化 → Step 5 引入梯度下降训练
+- 纹理降采样使用简单 box filter (非 mipmap) → 对某些材质可能不理想

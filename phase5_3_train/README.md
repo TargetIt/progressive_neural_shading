@@ -1,23 +1,31 @@
-# Phase 1.0: Hello Slang — Minimal Shader
+# Phase 5.3: Full Training Loop
 
 ## Quick Start
 
 ```bash
-pip install slangpy
-python src/step_1_0_hello.py
+python src/step_5_3_train.py
 ```
 
-应该看到 512×512 的纯红色窗口。按 ESC 退出。
+完整训练管线: Ref | Pred | Loss。观察 loss 逐渐逼近 baseline。按 ESC 退出。
 
 ## What This Phase Teaches
 
-- Slang `.slang` 文件的基本结构 (`import slangpy;`, 函数定义)
-- `slangpy` 的 GPU 调用模型 (`spy.call_id()`, `Tensor`, `blit`)
-- GPU 并行执行: `render(pixel)` 对每个像素执行一次, 512×512 = 262,144 次并行
+- 完整可微渲染训练管线: differentiable rendering + AD + Adam
+- SSAA reference sampling: wang_hash + LCG
+- Learning rate decay: 线性衰减 schedule
 
-## New in Phase 1.0
+## New in Phase 5.3
 
-- **app.py**: 最简渲染框架 (窗口 + GPU 设备 + blit)
-- **app.slang**: 最简 blit helper
-- **step_1_0_hello.slang**: 返回纯红色的着色器
-- **trace.py**: Tensor 统计 (min/max/mean)
+- **calculate_grads**: SSAA-based gradient computation
+- **wang_hash**: 随机种子生成
+- **init3/init1**: GPU 参数初始化
+- **LR decay**: 0.002 → 0.0002
+
+## Diff from Phase 5.2
+
+| Phase 5.2 | Phase 5.3 |
+|-----------|-----------|
+| 10 steps/frame | 50 steps/frame |
+| Simple ref | SSAA ref |
+| Constant LR | Linear decay |
+| No baseline | Baseline comparison |

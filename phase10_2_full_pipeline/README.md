@@ -1,23 +1,27 @@
-# Phase 1.0: Hello Slang — Minimal Shader
+# Phase 10.2: Full Pipeline
 
 ## Quick Start
 
 ```bash
-pip install slangpy
-python src/step_1_0_hello.py
+python src/step_10_2_full_pipeline.py
 ```
 
-应该看到 512×512 的纯红色窗口。按 ESC 退出。
+完整神经纹理管线: Latent → MLP → Material → BRDF → Render。按 ESC 退出。
 
 ## What This Phase Teaches
 
-- Slang `.slang` 文件的基本结构 (`import slangpy;`, 函数定义)
-- `slangpy` 的 GPU 调用模型 (`spy.call_id()`, `Tensor`, `blit`)
-- GPU 并行执行: `render(pixel)` 对每个像素执行一次, 512×512 = 262,144 次并行
+- 完整神经纹理: 从 latent texture 到 BRDF 输出的端到端管线
+- 可微渲染: 所有组件都是可微的
+- Neural Shading 的核心: MLP 学习 PBR 材质参数
 
-## New in Phase 1.0
+## New in Phase 10.2
 
-- **app.py**: 最简渲染框架 (窗口 + GPU 设备 + blit)
-- **app.slang**: 最简 blit helper
-- **step_1_0_hello.slang**: 返回纯红色的着色器
-- **trace.py**: Tensor 统计 (min/max/mean)
+- **Latent → Material → BRDF 管线**
+- **End-to-end differentiable rendering**
+
+## Diff from Phase 10.1
+
+| Phase 10.1 | Phase 10.2 |
+|-----------|-----------|
+| Latent → RGB | Latent → Material → BRDF → RGB |
+| Direct color | PBR pipeline |

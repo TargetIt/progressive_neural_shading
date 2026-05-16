@@ -1,23 +1,29 @@
-# Phase 1.0: Hello Slang — Minimal Shader
+# Phase 6.2: MLP Training
 
 ## Quick Start
 
 ```bash
-pip install slangpy
-python src/step_1_0_hello.py
+python src/step_6_2_mlp_training.py
 ```
 
-应该看到 512×512 的纯红色窗口。按 ESC 退出。
+单层 MLP 训练匹配 slangstars.png。3-panel: Ref | Pred | Loss。按 ESC 退出。
 
 ## What This Phase Teaches
 
-- Slang `.slang` 文件的基本结构 (`import slangpy;`, 函数定义)
-- `slangpy` 的 GPU 调用模型 (`spy.call_id()`, `Tensor`, `blit`)
-- GPU 并行执行: `render(pixel)` 对每个像素执行一次, 512×512 = 262,144 次并行
+- NetworkParameters: 参数化网络层的 Python/Slang 绑定
+- Atomic gradient accumulation: GPU 并行梯度求和
+- Mini-batch stochastic training: LCG + wang_hash
 
-## New in Phase 1.0
+## New in Phase 6.2
 
-- **app.py**: 最简渲染框架 (窗口 + GPU 设备 + blit)
-- **app.slang**: 最简 blit helper
-- **step_1_0_hello.slang**: 返回纯红色的着色器
-- **trace.py**: Tensor 统计 (min/max/mean)
+- **NetworkParameters<2,3>**: weights + biases + gradients + Adam moments
+- **Atomic accumulation**: `InterlockedAdd` for multi-thread gradient
+- **Batch training**: 64×64 mini-batch per step
+
+## Diff from Phase 6.1
+
+| Phase 6.1 | Phase 6.2 |
+|-----------|-----------|
+| Hardcoded W, b | Learned W, b |
+| No gradient | Atomic grad accumulation |
+| Single forward | Forward + backward + Adam |

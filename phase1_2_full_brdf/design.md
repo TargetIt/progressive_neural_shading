@@ -1,55 +1,65 @@
-# Phase 1.0: Hello Slang — Design Document
+# Phase 1.2: Full BRDF with Textures — Design Document
 
-> **对应**: SIGGRAPH 2025 Neural Shading Course — step_01 前半部分
-> **前置 Phase**: 无 (第一个 Phase)
+> **对应**: SIGGRAPH 2025 Neural Shading Course — step_01_basicprogram (完整版)
+> **前置 Phase**: Phase 1.1
 
 ## 1. Introduction / 架构概览
 
-Phase 1.0 是最小的可运行着色器：每个像素返回纯红色。
-目标是理解 Slang 着色语言的基本结构和 slangpy 的 GPU 调用模型。
+Phase 1.2 是 Step 1 的最终形态，功能等价于参考项目 `neural-shading-s25/mipmap/step_01_basicprogram`。
+在 Phase 1.1 的简化 BRDF 之上，引入**纹理采样**和**完整的 Disney BRDF 模型**。
 
 ```
 ┌──────────────────────────────────────────────────┐
-│                   step_1_0_hello.py               │
+│                step_1_2_full_brdf.py               │
 │  ┌──────────┐   ┌────────────┐   ┌───────────┐  │
-│  │ App 框架 │ → │ Slang 编译 │ → │ GPU 执行  │  │
-│  │ app.py   │   │ .slang→GPU │   │ 每像素并行 │  │
+│  │ 纹理加载 │ → │ Slang 编译 │ → │ GPU 执行  │  │
+│  │ JPEG→GPU │   │ .slang→GPU │   │ 每像素并行 │  │
 │  └──────────┘   └────────────┘   └───────────┘  │
 │       │               │                │         │
 │       v               v                v         │
-│  窗口+设备       step.slang      512×512 红色    │
-│  spy.Window      spy.Module       app.blit()     │
+│  3 张 PBR 纹理   step_1_2.slang   PBR 石材渲染  │
+│  albedo+normal   import brdf;      Disney BRDF   │
+│  +roughness      MaterialParams    ACES tonemap  │
 └──────────────────────────────────────────────────┘
 ```
 
 ## 2. Motivation / 设计动机
 
-学习任何 GPU 着色语言的第一步是理解:
-- **Shader 是什么**: 在 GPU 上对每个像素并行执行的函数
-- **Host 端如何调用**: Python → slangpy → GPU driver → 编译 → 执行
-- **数据流**: Tensor 分配 → shader 写入 → blit 到屏幕
-
-如果直接在 step_01 中引入 BRDF + 纹理 + 法线贴图, 初学者会迷失在细节中。
-Phase 1.0 剥离所有渲染知识, 只保留 GPU 编程的基本骨架。
+Phase 1.1 的硬编码颜色无法展示不同材质的视觉效果:
+- **纹理采样**: 每像素从 2D 纹理读取不同的 albedo/normal/roughness
+- **MaterialParameters struct**: GPU 编程中组织相关数据的标准模式
+- **Disney BRDF**: 工业级基于物理的 BRDF 模型，支持 metallic/specular 参数
 
 ## 3. Algorithm and Theory / 核心算法
 
-### GPU 并行执行模型
+### 3.1 纹理采样
 
+```slang
+struct MaterialParameters {
+    Tensor<float3, 2> albedo;    // RGB 纹理
+    Tensor<float3, 2> normal;    // 法线贴图
+    Tensor<float, 2> roughness;  // 粗糙度 (单通道)
+
+    float3 get_albedo(int2 pixel)   { return albedo.getv(pixel); }
+    float3 get_normal(int2 pixel)   { return normalize(normal.getv(pixel)); }
+    float get_roughness(int2 pixel) { return roughness.getv(pixel); }
+};
 ```
-CPU (Python):                     GPU (Slang):
-  module.render(                   ┌─────────────────────┐
-    pixel=spy.call_id(),           │ 对每个像素 (x,y):    │
-    _result=output                 │   render(x,y)        │
-  )                                │   并行执行 512×512 次 │
-                                   └─────────────────────┘
+
+### 3.2 Disney BRDF (brdf.slang)
+
+完整的基于物理的 BRDF 模型:
+- **Diffuse**: Schlick Fresnel 驱动的漫反射
+- **Specular**: GGX (GTR2) 法线分布 + Smith G 几何项
+- **Subsurface**: Hanrahan-Krueger 次表面散射近似
+- `[Differentiable]` 标注: 为后续 Phase 的自动微分做准备
+
+### 3.3 ACES 色调映射 (app.slang)
+
+HDR → LDR 显示:
 ```
-
-### 关键概念
-
-1. **spy.call_id()**: 告诉 slangpy 自动为 `pixel` 参数分配坐标
-2. **Tensor**: GPU 上的多维数组, `spy.Tensor.empty()` 在 GPU 显存中分配
-3. **blit**: 把 GPU Tensor 拷贝到屏幕输出纹理
+tonemap_aces_film(x) = saturate((x*(2.51*x+0.03)) / (x*(2.43*x+0.59)+0.14))
+```
 
 ## 4. Architecture / 架构
 
@@ -57,61 +67,66 @@ CPU (Python):                     GPU (Slang):
 
 | 文件 | 职责 | 行数 |
 |------|------|------|
-| `app.py` | 窗口创建, GPU 设备, blit 到屏幕 | ~100 |
-| `app.slang` | 最简 blit helper (Tensor→屏幕) | ~15 |
-| `step_1_0_hello.slang` | 着色器: 返回纯红色 | ~20 |
-| `step_1_0_hello.py` | 入口: 加载 shader, 渲染循环 | ~25 |
+| `app.py` | 窗口创建, GPU 设备, blit + tonemap | ~53 |
+| `app.slang` | blit helper + ACES 色调映射 | ~30 |
+| `brdf.slang` | 完整 Disney BRDF (DisneyBRDF + eval_brdf) | ~118 |
+| `step_1_2_full_brdf.slang` | MaterialParameters struct + render() | ~67 |
+| `step_1_2_full_brdf.py` | 纹理加载, 渲染循环 | ~66 |
+| `trace.py` | Tensor 统计 + 纹理输出验证 | ~40 |
 
-### 4.2 Key APIs
+### 4.2 Key APIs (新增)
 
 ```python
-# 创建 GPU 设备
-device = spy.create_device(DeviceType.automatic, include_paths=[...])
+# 从 JPEG/PNG 加载纹理到 GPU
+albedo_map = spy.Tensor.load_from_image(device, "albedo.jpg", linearize=True)
+normal_map = spy.Tensor.load_from_image(device, "normal.jpg", scale=2, offset=-1)
+roughness_map = spy.Tensor.load_from_image(device, "roughness.jpg", grayscale=True)
 
-# 编译 Shader
-module = spy.Module.load_from_file(device, "shader.slang")
-
-# 分配 GPU Tensor
-tensor = spy.Tensor.empty(device, shape=(H, W), dtype=spy.float3)
-
-# 逐像素执行 shader
-module.render(pixel=spy.call_id(), _result=tensor)
-
-# 显示到屏幕
-app.blit(tensor)
+# 传入 struct 参数 (嵌套字典)
+module.render(
+    pixel=spy.call_id(),
+    material={"albedo": albedo, "normal": normal, "roughness": roughness},
+    ...
+)
 ```
 
 ## 5. Processing Flow / 执行流程
 
 ```
-1. App.__init__()
-   ├── spy.Window(512, 512)        ← 创建窗口
-   ├── spy.create_device()         ← 创建 GPU 设备
-   └── spy.Module.load(app.slang)  ← 加载 blit helper
+1. 纹理加载
+   ├── albedo_map: JPEG → GPU Tensor (sRGB → linear)
+   ├── normal_map: JPEG → GPU Tensor ([0,1] → [-1,1])
+   └── roughness_map: JPEG → GPU Tensor (grayscale)
 
-2. step_1_0_hello.py
-   ├── spy.Module.load(step.slang) ← 编译 shader (首次慢, ~2-5秒)
-   └── spy.Tensor.empty(512,512)   ← 分配输出
-
-3. while app.process_events():     ← 每帧循环
-   ├── module.render(pixel=...)    ← GPU 执行: 512×512 次 render()
-   ├── app.blit(output)            ← Tensor → 屏幕纹理
-   └── app.present()               ← 提交帧
+2. 每帧循环
+   ├── module.render(pixel=..., material=...)
+   │   └── GPU: 对每个像素并行
+   │       ├── albedo = material.get_albedo(pixel)
+   │       ├── normal = material.get_normal(pixel)
+   │       ├── roughness = material.get_roughness(pixel)
+   │       ├── eval_brdf(albedo, light_dir, view_dir, normal, roughness, 0, 1)
+   │       │   └── DisneyBRDF(...)  // 完整 PBR 管线
+   │       └── return brdf * light_intensity
+   ├── app.blit(output, tonemap=True)
+   │   └── GPU: ACES 色调映射 (HDR → LDR)
+   └── app.present()
 ```
 
 ## 6. Comparison / 对比
 
-| Aspect | 参考 step_01 | Phase 1.0 |
-|--------|-------------|-----------|
-| 着色器输出 | BRDF 光照结果 | 纯红色 |
-| 纹理 | albedo + normal + roughness | 无 |
-| MaterialParameters struct | ✅ | ❌ |
-| BRDF 函数 | eval_brdf() | ❌ |
-| 代码行数 (.slang) | 43 | 20 |
-| 概念数 | 5+ | 2 |
+| Aspect | Phase 1.1 | Phase 1.2 | Change |
+|--------|-----------|-----------|--------|
+| Albedo | 硬编码 `(0.2,0.4,1.0)` | 纹理采样 `albedo.getv(pixel)` | 逐像素变化 |
+| Normal | 固定 `(0,0,1)` | 法线贴图采样 | 凹凸细节 |
+| Roughness | 固定 `0.3` | 粗糙度纹理采样 | 逐像素变化 |
+| BRDF | Lambertian + Blinn-Phong | 完整 Disney BRDF | 物理正确 |
+| 色调映射 | 无 (clamp) | ACES filmic | HDR 显示 |
+| 文件数 | 5 | 7 (+brdf.slang +assets/) | +2 |
+| 纹理依赖 | 无 | 3 张 PBR 纹理 | 新增 |
+| Window | 512×512 | 1024×1024 | 高分辨率 |
 
 ## 7. Known Issues / 遗留问题
 
-- 没有交互性 — 颜色是硬编码的, 不随输入变化
-- 没有纹理 — 无法展示材质
-- 下一 Phase (1.1) 将引入 BRDF 光照模型
+- 使用全分辨率纹理渲染，大窗口下性能可能不足 → 下一 Step 引入 Mipmap
+- Disney BRDF 是全分辨率评估的，无 LOD → Phase 2 解决
+- 单采样 (1 sample/pixel) → Phase 3 引入超采样抗锯齿

@@ -1,55 +1,62 @@
-# Phase 1.0: Hello Slang — Design Document
+# Phase 2.0: Python Downsample — Design Document
 
-> **对应**: SIGGRAPH 2025 Neural Shading Course — step_01 前半部分
-> **前置 Phase**: 无 (第一个 Phase)
+> **对应**: SIGGRAPH 2025 Neural Shading Course — step_02_mipmap (前半部分)
+> **前置 Phase**: Phase 1.2
 
 ## 1. Introduction / 架构概览
 
-Phase 1.0 是最小的可运行着色器：每个像素返回纯红色。
-目标是理解 Slang 着色语言的基本结构和 slangpy 的 GPU 调用模型。
+Phase 2.0 在 Python/NumPy 端手动实现 2×2 box filter 降采样。
+先用 Phase 1.2 的 Disney BRDF 渲染全分辨率图像，再在 CPU 端做降采样。
 
 ```
 ┌──────────────────────────────────────────────────┐
-│                   step_1_0_hello.py               │
+│                step_2_0_downsample.py              │
 │  ┌──────────┐   ┌────────────┐   ┌───────────┐  │
-│  │ App 框架 │ → │ Slang 编译 │ → │ GPU 执行  │  │
-│  │ app.py   │   │ .slang→GPU │   │ 每像素并行 │  │
+│  │ GPU 渲染 │ → │ CPU→NumPy  │ → │ Box Filter│  │
+│  │ Phase 1.2│   │ to_numpy() │   │ 2x2 mean  │  │
 │  └──────────┘   └────────────┘   └───────────┘  │
 │       │               │                │         │
 │       v               v                v         │
-│  窗口+设备       step.slang      512×512 红色    │
-│  spy.Window      spy.Module       app.blit()     │
+│  全分辨率 BRDF    numpy.ndarray   分辨率/4 输出   │
+│  1024×512        reshape+mean    → spy.Tensor    │
 └──────────────────────────────────────────────────┘
 ```
 
 ## 2. Motivation / 设计动机
 
-学习任何 GPU 着色语言的第一步是理解:
-- **Shader 是什么**: 在 GPU 上对每个像素并行执行的函数
-- **Host 端如何调用**: Python → slangpy → GPU driver → 编译 → 执行
-- **数据流**: Tensor 分配 → shader 写入 → blit 到屏幕
-
-如果直接在 step_01 中引入 BRDF + 纹理 + 法线贴图, 初学者会迷失在细节中。
-Phase 1.0 剥离所有渲染知识, 只保留 GPU 编程的基本骨架。
+Phase 1.2 是全分辨率渲染，大窗口下性能不足。Mipmap 通过多级分辨率纹理链来解决:
+- **为什么要降采样**: 远处的物体不需要全分辨率纹理
+- **为什么先在 Python 做**: 让学习者理解 box filter 的数学原理，再迁移到 GPU
+- **为什么要感受 CPU 性能**: `to_numpy()` 和 `from_numpy()` 有 GPU↔CPU 传输开销，这是理解 GPU 降采样价值的铺垫
 
 ## 3. Algorithm and Theory / 核心算法
 
-### GPU 并行执行模型
+### 3.1 2×2 Box Filter
 
 ```
-CPU (Python):                     GPU (Slang):
-  module.render(                   ┌─────────────────────┐
-    pixel=spy.call_id(),           │ 对每个像素 (x,y):    │
-    _result=output                 │   render(x,y)        │
-  )                                │   并行执行 512×512 次 │
-                                   └─────────────────────┘
+Input:  H × W 图像
+Output: H/2 × W/2 图像
+
+对每个 2×2 块取平均:
+output[i,j] = (input[2i,2j] + input[2i,2j+1] +
+                input[2i+1,2j] + input[2i+1,2j+1]) / 4
 ```
 
-### 关键概念
+### 3.2 NumPy 向量化实现
 
-1. **spy.call_id()**: 告诉 slangpy 自动为 `pixel` 参数分配坐标
-2. **Tensor**: GPU 上的多维数组, `spy.Tensor.empty()` 在 GPU 显存中分配
-3. **blit**: 把 GPU Tensor 拷贝到屏幕输出纹理
+```python
+reshaped = arr[:new_h*2, :new_w*2].reshape(new_h, 2, new_w, 2, -1)
+result = reshaped.mean(axis=(1, 3))
+```
+
+### 3.3 Mipmap 链概念
+
+```
+Level 0: H × W        (原始分辨率)
+Level 1: H/2 × W/2    (1 级降采样)
+Level 2: H/4 × W/4    (2 级降采样)
+...
+```
 
 ## 4. Architecture / 架构
 
@@ -57,61 +64,52 @@ CPU (Python):                     GPU (Slang):
 
 | 文件 | 职责 | 行数 |
 |------|------|------|
-| `app.py` | 窗口创建, GPU 设备, blit 到屏幕 | ~100 |
-| `app.slang` | 最简 blit helper (Tensor→屏幕) | ~15 |
-| `step_1_0_hello.slang` | 着色器: 返回纯红色 | ~20 |
-| `step_1_0_hello.py` | 入口: 加载 shader, 渲染循环 | ~25 |
+| `app.py` | 窗口创建, GPU 设备, blit + tonemap | ~53 |
+| `app.slang` | blit helper + ACES 色调映射 | ~30 |
+| `brdf.slang` | 完整 Disney BRDF | ~118 |
+| `step_1_2_full_brdf.slang` | 依赖: 全分辨率 BRDF 渲染 | ~67 |
+| `step_2_0_downsample.py` | 入口: 渲染 + Python 降采样 | ~54 |
+| `trace.py` | Tensor 统计 + 降采样验证 | ~45 |
 
-### 4.2 Key APIs
+### 4.2 关键数据流
 
 ```python
-# 创建 GPU 设备
-device = spy.create_device(DeviceType.automatic, include_paths=[...])
+# GPU 渲染
+output = Tensor.empty(device, shape)
+module.render(..., _result=output)
 
-# 编译 Shader
-module = spy.Module.load_from_file(device, "shader.slang")
-
-# 分配 GPU Tensor
-tensor = spy.Tensor.empty(device, shape=(H, W), dtype=spy.float3)
-
-# 逐像素执行 shader
-module.render(pixel=spy.call_id(), _result=tensor)
-
-# 显示到屏幕
-app.blit(tensor)
+# GPU → CPU → 降采样 → GPU
+arr = output.to_numpy()                     # GPU → CPU (慢!)
+downsampled = box_filter_2x2(arr)           # CPU 计算
+result = Tensor.from_numpy(device, arr)     # CPU → GPU (慢!)
 ```
 
 ## 5. Processing Flow / 执行流程
 
 ```
-1. App.__init__()
-   ├── spy.Window(512, 512)        ← 创建窗口
-   ├── spy.create_device()         ← 创建 GPU 设备
-   └── spy.Module.load(app.slang)  ← 加载 blit helper
+1. 加载纹理 + 编译 shader (同 Phase 1.2)
 
-2. step_1_0_hello.py
-   ├── spy.Module.load(step.slang) ← 编译 shader (首次慢, ~2-5秒)
-   └── spy.Tensor.empty(512,512)   ← 分配输出
-
-3. while app.process_events():     ← 每帧循环
-   ├── module.render(pixel=...)    ← GPU 执行: 512×512 次 render()
-   ├── app.blit(output)            ← Tensor → 屏幕纹理
-   └── app.present()               ← 提交帧
+2. 每帧循环
+   ├── module.render(...)              ← GPU 渲染全分辨率 BRDF
+   ├── output.to_numpy()               ← GPU → CPU 拷贝
+   ├── reshape → 2x2 mean (steps=2)    ← CPU 降采样 (分辨率/4)
+   ├── Tensor.from_numpy(downsampled)  ← CPU → GPU 拷贝
+   ├── app.blit(downsampled, tonemap=True)
+   └── app.present()
 ```
 
 ## 6. Comparison / 对比
 
-| Aspect | 参考 step_01 | Phase 1.0 |
-|--------|-------------|-----------|
-| 着色器输出 | BRDF 光照结果 | 纯红色 |
-| 纹理 | albedo + normal + roughness | 无 |
-| MaterialParameters struct | ✅ | ❌ |
-| BRDF 函数 | eval_brdf() | ❌ |
-| 代码行数 (.slang) | 43 | 20 |
-| 概念数 | 5+ | 2 |
+| Aspect | Phase 1.2 | Phase 2.0 | Change |
+|--------|-----------|-----------|--------|
+| 渲染 | 全分辨率 BRDF | 全分辨率 BRDF (同) | — |
+| 降采样 | 无 | Python box filter 2×2 | 新增 |
+| 输出分辨率 | 原始 1024×1024 | 256×256 (steps=2) | 降低 |
+| 计算位置 | GPU only | GPU + CPU | GPU→CPU→GPU |
+| 性能瓶颈 | GPU shader | GPU↔CPU 传输 | 新增瓶颈 |
 
 ## 7. Known Issues / 遗留问题
 
-- 没有交互性 — 颜色是硬编码的, 不随输入变化
-- 没有纹理 — 无法展示材质
-- 下一 Phase (1.1) 将引入 BRDF 光照模型
+- `to_numpy()` 和 `from_numpy()` 有显著的 GPU↔CPU 传输延迟 → Phase 2.1 将降采样移回 GPU
+- Python box filter 是串行的 (虽然用了 NumPy 向量化) → Phase 2.1 GPU 并行降采样
+- 降采样后输出显示在原始大小的窗口中，会拉伸 → Phase 2.2 用 Mipmap 链正确处理 LOD

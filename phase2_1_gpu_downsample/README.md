@@ -1,23 +1,31 @@
-# Phase 1.0: Hello Slang — Minimal Shader
+# Phase 2.1: GPU Downsampling
 
 ## Quick Start
 
 ```bash
-pip install slangpy
-python src/step_1_0_hello.py
+python src/step_2_1_gpu_downsample.py
 ```
 
-应该看到 512×512 的纯红色窗口。按 ESC 退出。
+应该看到 GPU 降采样后的 BRDF 渲染 (相比 Phase 2.0 的 CPU 版本，运行更流畅)。按 ESC 退出。
 
 ## What This Phase Teaches
 
-- Slang `.slang` 文件的基本结构 (`import slangpy;`, 函数定义)
-- `slangpy` 的 GPU 调用模型 (`spy.call_id()`, `Tensor`, `blit`)
-- GPU 并行执行: `render(pixel)` 对每个像素执行一次, 512×512 = 262,144 次并行
+- GPU 并行降采样: 每个输出像素独立取出 4 个源像素取平均
+- 为什么 GPU 降采样比 CPU 快: 避免 GPU↔CPU 数据传输
+- Slang 中多函数 module: render + downsample 共存于一个 .slang 文件
+- Tensor 维度处理: float3 (3 通道) vs float (单通道) 的分离函数
 
-## New in Phase 1.0
+## New in Phase 2.1
 
-- **app.py**: 最简渲染框架 (窗口 + GPU 设备 + blit)
-- **app.slang**: 最简 blit helper
-- **step_1_0_hello.slang**: 返回纯红色的着色器
-- **trace.py**: Tensor 统计 (min/max/mean)
+- **downsample3()**: GPU 并行 2×2 box filter for float3
+- **downsample1()**: GPU 并行 2×2 box filter for float
+- **自包含 shader**: 渲染 + 降采样都在 step_2_1_gpu_downsample.slang
+
+## Diff from Phase 2.0
+
+| Phase 2.0 | Phase 2.1 |
+|-----------|-----------|
+| CPU (NumPy) 降采样 | GPU (Slang) 降采样 |
+| GPU↔CPU 数据传输 | 零数据传输 |
+| 慢 (PCIe 瓶颈) | 快 (GPU 并行) |
+| 依赖 step_1_2 shader | 自包含 shader |

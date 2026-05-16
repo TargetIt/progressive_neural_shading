@@ -14,7 +14,7 @@ def test_imports():
     try:
         import slangpy as spy
         from app import App
-        from trace import tensor_stats
+        from trace import tensor_stats, verify_lighting_variation
         check(True, "all imports OK")
     except Exception as e:
         check(False, str(e))
@@ -57,7 +57,7 @@ def test_trace_stats():
     print("\n--- Trace Stats ---")
     try:
         from app import App; import slangpy as spy
-        from trace import tensor_stats
+        from trace import tensor_stats, verify_lighting_variation
         app = App(title="Test", width=64, height=64)
         module = spy.Module.load_from_file(app.device, "step_1_1_albedo_brdf.slang")
         output = spy.Tensor.empty(app.device, shape=(64, 64), dtype=spy.float3)
@@ -68,21 +68,31 @@ def test_trace_stats():
         stats = tensor_stats(output)
         check(stats['shape'] == (64, 64), f"shape={stats['shape']}")
         check(stats['max'] > stats['min'], "max > min (lighting variation)")
+        ok, msg = verify_lighting_variation(output)
+        check(ok, f"lighting variation: {msg}")
         app.window.close()
     except Exception as e:
         check(False, str(e))
 
 
-def test_backward_compat():
-    """Phase 1.0 的 shader 仍然可以运行。"""
-    print("\n--- Backward Compat (Phase 1.0) ---")
+def test_render_loop():
+    """验证完整渲染循环不崩溃。"""
+    print("\n--- Render Loop Test ---")
     try:
         from app import App; import slangpy as spy
-        app = App(title="Test", width=32, height=32)
-        mod1 = spy.Module.load_from_file(app.device, "step_1_1_albedo_brdf.slang")
-        check(mod1 is not None, "Phase 1.1 shader compiles")
+        app = App(title="Test", width=64, height=64)
+        module = spy.Module.load_from_file(app.device, "step_1_1_albedo_brdf.slang")
+        output = spy.Tensor.empty(app.device, shape=(64, 64), dtype=spy.float3)
+        light_dir = spy.float3(0.3, 0.2, 1.0)
+        view_dir = spy.float3(0, 0, 1)
+        # Run a few frames
+        for _ in range(3):
+            app.process_events()
+            module.render(pixel=spy.call_id(), light_dir=light_dir,
+                          view_dir=view_dir, _result=output)
+            app.blit(output)
+        check(True, "render loop completed")
         app.window.close()
-        check(True, "backward compat OK")
     except Exception as e:
         check(False, str(e))
 
@@ -96,7 +106,7 @@ def main():
     test_shader_compile()
     test_output_not_solid()
     test_trace_stats()
-    test_backward_compat()
+    test_render_loop()
     total = passed + failed
     print(f"\n{'=' * 60}")
     print(f"Results: {passed}/{total} passed, {failed} failed")

@@ -1,23 +1,27 @@
-# Phase 1.0: Hello Slang — Minimal Shader
+# Phase 9.1: Multi-Frequency Encoding
 
 ## Quick Start
 
 ```bash
-pip install slangpy
-python src/step_1_0_hello.py
+python src/step_9_1_multi_freq_encoding.py
 ```
 
-应该看到 512×512 的纯红色窗口。按 ESC 退出。
+NeRF-style 多频率 sin/cos 编码。按 ESC 退出。
 
 ## What This Phase Teaches
 
-- Slang `.slang` 文件的基本结构 (`import slangpy;`, 函数定义)
-- `slangpy` 的 GPU 调用模型 (`spy.call_id()`, `Tensor`, `blit`)
-- GPU 并行执行: `render(pixel)` 对每个像素执行一次, 512×512 = 262,144 次并行
+- NeRF 位置编码: γ(v) = (sin, cos) at multiple frequency scales
+- Multi-scale representation: 低频=全局, 高频=细节
+- Why sin+cos: 提供相位信息，比单独 sin 更丰富
 
-## New in Phase 1.0
+## New in Phase 9.1
 
-- **app.py**: 最简渲染框架 (窗口 + GPU 设备 + blit)
-- **app.slang**: 最简 blit helper
-- **step_1_0_hello.slang**: 返回纯红色的着色器
-- **trace.py**: Tensor 统计 (min/max/mean)
+- **Multi-frequency sin/cos**: N frequencies → 4N dim output
+- **Scale pyramid**: 2^0π to 2^(N-1)π
+
+## Diff from Phase 9.0
+
+| Phase 9.0 | Phase 9.1 |
+|-----------|-----------|
+| Single freq, sin only | Multi-freq, sin+cos |
+| 2D→2D | 2D→4N D |

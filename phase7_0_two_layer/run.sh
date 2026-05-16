@@ -1,4 +1,4 @@
 #!/bin/bash
-# Phase 1.0: Hello Slang
+# Phase 7.0: Two-Layer Forward
 cd "$(dirname "$0")"
-python src/step_1_0_hello.py
+python src/step_7_0_two_layer.py

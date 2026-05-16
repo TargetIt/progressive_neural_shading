@@ -1,4 +1,4 @@
 #!/bin/bash
-# Phase 1.0: Hello Slang
+# Phase 8.1: Activation Gallery
 cd "$(dirname "$0")"
-python src/step_1_0_hello.py
+python src/step_8_1_activation_gallery.py

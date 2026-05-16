@@ -1,23 +1,28 @@
-# Phase 1.0: Hello Slang — Minimal Shader
+# Phase 5.0: Numerical Gradient
 
 ## Quick Start
 
 ```bash
-pip install slangpy
-python src/step_1_0_hello.py
+python src/step_5_0_numgrad.py
 ```
 
-应该看到 512×512 的纯红色窗口。按 ESC 退出。
+左: Reference render。右: 数值梯度热图 (dL/dRoughness)。按 ESC 退出。
 
 ## What This Phase Teaches
 
-- Slang `.slang` 文件的基本结构 (`import slangpy;`, 函数定义)
-- `slangpy` 的 GPU 调用模型 (`spy.call_id()`, `Tensor`, `blit`)
-- GPU 并行执行: `render(pixel)` 对每个像素执行一次, 512×512 = 262,144 次并行
+- 数值梯度: Central finite differences dL/dx ≈ (L(x+h)-L(x-h))/(2h)
+- 为什么需要梯度: 优化/训练的数学基础
+- 数值梯度的局限: 慢 (2 次额外前向 pass)、精度依赖 h
 
-## New in Phase 1.0
+## New in Phase 5.0
 
-- **app.py**: 最简渲染框架 (窗口 + GPU 设备 + blit)
-- **app.slang**: 最简 blit helper
-- **step_1_0_hello.slang**: 返回纯红色的着色器
-- **trace.py**: Tensor 统计 (min/max/mean)
+- **数值梯度计算**: roughness ± h → loss 差分
+- **梯度可视化**: 灰度热图
+
+## Diff from Phase 4.2
+
+| Phase 4.2 | Phase 5.0 |
+|-----------|-----------|
+| Loss only | Loss + Gradient |
+| 静态可视化 | 数值优化方向 |
+| 2 renders | 3 renders |

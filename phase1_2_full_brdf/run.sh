@@ -1,4 +1,4 @@
 #!/bin/bash
-# Phase 1.0: Hello Slang
+# Phase 1.2: Full BRDF with Textures
 cd "$(dirname "$0")"
-python src/step_1_0_hello.py
+python src/step_1_2_full_brdf.py

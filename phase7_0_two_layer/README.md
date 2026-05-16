@@ -1,23 +1,28 @@
-# Phase 1.0: Hello Slang — Minimal Shader
+# Phase 7.0: Two-Layer Forward
 
 ## Quick Start
 
 ```bash
-pip install slangpy
-python src/step_1_0_hello.py
+python src/step_7_0_two_layer.py
 ```
 
-应该看到 512×512 的纯红色窗口。按 ESC 退出。
+双层网络: 2→16→3 forward pass。按 ESC 退出。
 
 ## What This Phase Teaches
 
-- Slang `.slang` 文件的基本结构 (`import slangpy;`, 函数定义)
-- `slangpy` 的 GPU 调用模型 (`spy.call_id()`, `Tensor`, `blit`)
-- GPU 并行执行: `render(pixel)` 对每个像素执行一次, 512×512 = 262,144 次并行
+- 多层网络 (MLP): 堆叠多个 NetworkParameters
+- 隐藏层概念: 16 个隐藏神经元增加模型容量
+- 层间 ReLU: 只有隐藏层有 activation，输出层是线性的
 
-## New in Phase 1.0
+## New in Phase 7.0
 
-- **app.py**: 最简渲染框架 (窗口 + GPU 设备 + blit)
-- **app.slang**: 最简 blit helper
-- **step_1_0_hello.slang**: 返回纯红色的着色器
-- **trace.py**: Tensor 统计 (min/max/mean)
+- **layer0 + layer1**: 第一个多层网络
+- **隐藏层**: 16 维中间表示
+
+## Diff from Phase 6.2
+
+| Phase 6.2 | Phase 7.0 |
+|-----------|-----------|
+| Single layer | Two layers |
+| 2→3 directly | 2→16→3 |
+| Training | Forward only |

@@ -1,22 +1,22 @@
-# Phase 1.0 Requirements
+# Phase 5.3 Requirements
 
 ## New Features (2026-05-16)
 
-- **Minimal App Framework** (`app.py`): window + GPU device + blit, ~100 lines
-- **Minimal Blit Shader** (`app.slang`): Tensor → screen output texture
-- **Hello Slang Shader** (`step_1_0_hello.slang`): returns solid red `float3(1,0,0)`
-- **Entry Point** (`step_1_0_hello.py`): loads shader, render loop, ESC to exit
+- **完整训练管线**: 可微渲染 + SSAA 参考 + Adam + LR 衰减
+- **SSAA 参考采样**: `wang_hash(seed)` + LCG 随机方向
+- **Learning rate 衰减**: 线性: 0.002 → 0.0002 (3000 steps)
+- **Baseline loss**: 对比优化前后的 loss
 
 ## Functional Requirements
 
-1. User can run `python src/step_1_0_hello.py` and see a red window
-2. Window size is 512×512
-3. ESC key closes the window
-4. All pixels should be (1.0, 0.0, 0.0)
+1. Run `python src/step_5_3_train.py` to see full training pipeline
+2. Loss decreases from baseline over optimization
+3. Console shows Step / Loss / Baseline
 
 ## Acceptance Criteria
 
-- [x] Window opens without errors
-- [x] All pixels are solid red
-- [x] ESC closes the window
-- [x] shader compiles successfully (first run may take 2-5 seconds)
+- [x] Full training loop works: loss decreases
+- [x] SSAA reference computed correctly
+- [x] LR decay active
+- [x] ESC closes window
+- [x] Functional equivalence with step_05_train

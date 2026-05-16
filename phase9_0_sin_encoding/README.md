@@ -1,23 +1,27 @@
-# Phase 1.0: Hello Slang — Minimal Shader
+# Phase 9.0: Sin Encoding
 
 ## Quick Start
 
 ```bash
-pip install slangpy
-python src/step_1_0_hello.py
+python src/step_9_0_sin_encoding.py
 ```
 
-应该看到 512×512 的纯红色窗口。按 ESC 退出。
+Sin 位置编码: UV → sin(freq * UV) → MLP。按 ESC 退出。
 
 ## What This Phase Teaches
 
-- Slang `.slang` 文件的基本结构 (`import slangpy;`, 函数定义)
-- `slangpy` 的 GPU 调用模型 (`spy.call_id()`, `Tensor`, `blit`)
-- GPU 并行执行: `render(pixel)` 对每个像素执行一次, 512×512 = 262,144 次并行
+- Spectral bias: MLP 天然偏好低频函数
+- 位置编码: 将低维坐标映射到高频空间
+- NeRF-style encoding 的第一步
 
-## New in Phase 1.0
+## New in Phase 9.0
 
-- **app.py**: 最简渲染框架 (窗口 + GPU 设备 + blit)
-- **app.slang**: 最简 blit helper
-- **step_1_0_hello.slang**: 返回纯红色的着色器
-- **trace.py**: Tensor 统计 (min/max/mean)
+- **sin(freq * UV)**: 单频率位置编码
+- **高频细节改善**: 比 raw UV 更好的纹理重建
+
+## Diff from Phase 8.1
+
+| Phase 8.1 | Phase 9.0 |
+|-----------|-----------|
+| Raw UV input | sin(freq * UV) |
+| Activation focus | Encoding focus |

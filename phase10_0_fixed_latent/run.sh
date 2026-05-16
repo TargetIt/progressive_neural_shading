@@ -1,4 +1,4 @@
 #!/bin/bash
-# Phase 1.0: Hello Slang
+# Phase 10.0: Fixed Latent Texture
 cd "$(dirname "$0")"
-python src/step_1_0_hello.py
+python src/step_10_0_fixed_latent.py

@@ -1,23 +1,27 @@
-# Phase 1.0: Hello Slang — Minimal Shader
+# Phase 7.1: Deep Network Training
 
 ## Quick Start
 
 ```bash
-pip install slangpy
-python src/step_1_0_hello.py
+python src/step_7_1_deep_network.py
 ```
 
-应该看到 512×512 的纯红色窗口。按 ESC 退出。
+3 层深度网络 (32→32) 训练。按 ESC 退出。
 
 ## What This Phase Teaches
 
-- Slang `.slang` 文件的基本结构 (`import slangpy;`, 函数定义)
-- `slangpy` 的 GPU 调用模型 (`spy.call_id()`, `Tensor`, `blit`)
-- GPU 并行执行: `render(pixel)` 对每个像素执行一次, 512×512 = 262,144 次并行
+- 深度网络: more layers = more expressiveness
+- 隐藏层维度: 32 vs 16 (Phase 7.0) 的效果差异
+- 多层反向传播: 梯度通过多个层回传
 
-## New in Phase 1.0
+## New in Phase 7.1
 
-- **app.py**: 最简渲染框架 (窗口 + GPU 设备 + blit)
-- **app.slang**: 最简 blit helper
-- **step_1_0_hello.slang**: 返回纯红色的着色器
-- **trace.py**: Tensor 统计 (min/max/mean)
+- **3 层 MLP**: 2→32→32→3
+- **完整多层训练管线**
+
+## Diff from Phase 7.0
+
+| Phase 7.0 | Phase 7.1 |
+|-----------|-----------|
+| 2 layers (2→16→3) | 3 layers (2→32→32→3) |
+| Forward only | Full training |

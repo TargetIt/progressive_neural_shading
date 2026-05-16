@@ -1,4 +1,4 @@
 #!/bin/bash
-# Phase 1.0: Hello Slang
+# Phase 10.2: Full Pipeline
 cd "$(dirname "$0")"
-python src/step_1_0_hello.py
+python src/step_10_2_full_pipeline.py

@@ -1,22 +1,18 @@
-# Phase 1.0 Requirements
+# Phase 6.1 Requirements
 
 ## New Features (2026-05-16)
 
-- **Minimal App Framework** (`app.py`): window + GPU device + blit, ~100 lines
-- **Minimal Blit Shader** (`app.slang`): Tensor → screen output texture
-- **Hello Slang Shader** (`step_1_0_hello.slang`): returns solid red `float3(1,0,0)`
-- **Entry Point** (`step_1_0_hello.py`): loads shader, render loop, ESC to exit
+- **Bias 向量**: `Tensor<float, 1>` 存储 3 元素 bias
+- **ReLU 激活**: `max(0, x)` — 非线性激活函数
 
 ## Functional Requirements
 
-1. User can run `python src/step_1_0_hello.py` and see a red window
-2. Window size is 512×512
-3. ESC key closes the window
-4. All pixels should be (1.0, 0.0, 0.0)
+1. Run `python src/step_6_1_neuron.py` to see complete neuron output
+2. Output has no negative values (ReLU property)
+3. Dark regions where W*uv+b < 0 (ReLU kills those)
 
 ## Acceptance Criteria
 
-- [x] Window opens without errors
-- [x] All pixels are solid red
+- [x] Neuron: matmul + bias + ReLU works
+- [x] No negative output values
 - [x] ESC closes the window
-- [x] shader compiles successfully (first run may take 2-5 seconds)

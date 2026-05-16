@@ -1,23 +1,33 @@
-# Phase 1.0: Hello Slang — Minimal Shader
+# Phase 1.1: Albedo BRDF — Lighting with Hardcoded Color
 
 ## Quick Start
 
 ```bash
 pip install slangpy
-python src/step_1_0_hello.py
+python src/step_1_1_albedo_brdf.py
 ```
 
-应该看到 512×512 的纯红色窗口。按 ESC 退出。
+应该看到 512×512 的蓝色光照效果 (中心偏亮、边缘偏暗)。按 ESC 退出。
 
 ## What This Phase Teaches
 
-- Slang `.slang` 文件的基本结构 (`import slangpy;`, 函数定义)
-- `slangpy` 的 GPU 调用模型 (`spy.call_id()`, `Tensor`, `blit`)
-- GPU 并行执行: `render(pixel)` 对每个像素执行一次, 512×512 = 262,144 次并行
+- BRDF 的基本概念: 光线如何在材质表面反射
+- Lambertian diffuse (漫反射): `diffuse = albedo * max(0, N·L)`
+- Blinn-Phong specular (高光): `specular = pow(N·H, 1/roughness)`
+- Slang 中 float3 向量的操作: `dot()`, `normalize()`, `pow()`
+- Uniform 参数: Python 传入的标量/向量在 GPU 所有线程中共享
 
-## New in Phase 1.0
+## New in Phase 1.1
 
-- **app.py**: 最简渲染框架 (窗口 + GPU 设备 + blit)
-- **app.slang**: 最简 blit helper
-- **step_1_0_hello.slang**: 返回纯红色的着色器
-- **trace.py**: Tensor 统计 (min/max/mean)
+- **eval_brdf()**: 简化版 BRDF 评估函数 (diffuse + specular)
+- **render() 新参数**: `light_dir`, `view_dir` 从 host 端传入
+- **硬编码材质**: 蓝色 albedo = `(0.2, 0.4, 1.0)`, 平面法线
+
+## Diff from Phase 1.0
+
+| Phase 1.0 | Phase 1.1 |
+|-----------|-----------|
+| 纯红色 flat 输出 | 蓝色 BRDF 光照 |
+| 无光照计算 | Lambertian + Blinn-Phong |
+| 无输入参数 | light_dir + view_dir |
+| 24 行 .slang | 62 行 .slang |

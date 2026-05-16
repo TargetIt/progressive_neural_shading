@@ -1,4 +1,4 @@
 #!/bin/bash
-# Phase 1.0: Hello Slang
+# Phase 9.0: Sin Encoding
 cd "$(dirname "$0")"
-python src/step_1_0_hello.py
+python src/step_9_0_sin_encoding.py
