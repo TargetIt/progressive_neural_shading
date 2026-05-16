@@ -1,1 +1,4 @@
-progressive_neural_shading/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
